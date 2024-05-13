@@ -1,70 +1,87 @@
-﻿using Book_WebAPI.Models;
-using Book_WebAPI.Services;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Book_WebAPI.Models.Domain;
+using Book_WebAPI.Models.DTO.Author;
+using Book_WebAPI.Models.Interfaces;
 
 namespace Book_WebAPI.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class AuthorsController : ControllerBase
+    [ApiController]
+    public class AuthorController : ControllerBase
     {
-        private readonly ILibraryService _libraryService;
-
-        public AuthorsController(ILibraryService libraryService)
+        private readonly IAuthorRepository _authorRepository;
+        public AuthorController(IAuthorRepository authorRepository)
         {
-            _libraryService = libraryService;
+            _authorRepository = authorRepository;
         }
-
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Author>>> GetAuthors()
+        [HttpGet("get-all-authors")]
+        public async Task<IActionResult> GetAuthors()
         {
-            var authors = await _libraryService.GetAuthorsAsync();
-            return Ok(authors);
+            var authors = await _authorRepository.GetAuthorsAsync();
+
+            if (authors == null)
+            {
+                return StatusCode(StatusCodes.Status204NoContent, "No authors in database");
+            }
+
+            return StatusCode(StatusCodes.Status200OK, authors);
         }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Author>> GetAuthor(int id)
+        [HttpGet("get-author-by-id")]
+        public async Task<IActionResult> GetAuthor(int id, bool includeAuthors = false)
         {
-            var author = await _libraryService.GetAuthorAsync(id);
+            Author author = await _authorRepository.GetAuthorAsync(id, includeAuthors);
+
             if (author == null)
             {
-                return NotFound();
+                return StatusCode(StatusCodes.Status204NoContent, $"No author found for id: {id}");
             }
-            return author;
+
+            return StatusCode(StatusCodes.Status200OK, author);
         }
-
-
-        [HttpPost]
-        public async Task<ActionResult<Author>> PostAuthor(Author author)
+        [HttpPost("add-author")]
+        public async Task<ActionResult<AddAuthorBookDTO>> AddAuthor([FromBody] AddAuthorBookDTO author)
         {
-            var newAuthor = await _libraryService.AddAuthorAsync(author);
-            return CreatedAtAction(nameof(GetAuthor), new { id = newAuthor.AuthorID }, newAuthor);
+            if (ModelState.IsValid)
+            {
+                var dbAuthor = await _authorRepository.AddAuthorAsync(author);
+
+                if (dbAuthor == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, $"{author.AuthorName} could not be added.");
+                }
+                return Ok();
+            }
+            else
+            {
+                return BadRequest(ModelState);
+            }
         }
-
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAuthor(int id, Author author)
+        [HttpPut("update-authors-by-id")]
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] UpdateAuthorBookDTO author)
         {
-            if (id != author.AuthorID)
+            if (id != author.AuthorId)
             {
                 return BadRequest();
             }
-            await _libraryService.UpdateAuthorAsync(author);
-            return NoContent();
-        }
-
-        // DELETE: api/authors/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteAuthor(int id)
-        {
-            var result = await _libraryService.DeleteAuthorAsync(id);
-            if (!result)
+            UpdateAuthorBookDTO dbAuthor = await _authorRepository.UpdateAuthorAsync(author);
+            if (dbAuthor == null)
             {
-                return NotFound();
+                return StatusCode(StatusCodes.Status500InternalServerError, $"{author.AuthorId} could not be updated");
             }
             return NoContent();
         }
-    }
+        [HttpDelete("delete-author-by-id")]
+        public async Task<IActionResult> DeleteAuthor(int id)
+        {
+            var author = await _authorRepository.GetAuthorAsync(id, false);
+            (bool status, string message) = await _authorRepository.DeleteAuthorAsync(author);
 
+            if (status == false)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+            return StatusCode(StatusCodes.Status200OK, author);
+        }
+    }
 }

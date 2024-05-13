@@ -1,71 +1,138 @@
-﻿using Book_WebAPI.Models;
-using Book_WebAPI.Services;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Book_WebAPI.Models.Domain;
+using Book_WebAPI.Models.DTO.Book;
+using Book_WebAPI.Models.Interfaces;
+using Book_WebAPI.Data;
+using System.Text.Json;
 
 namespace Book_WebAPI.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
+    [Authorize]
     public class BooksController : ControllerBase
     {
-        private readonly ILibraryService _libraryService;
-
-        public BooksController(ILibraryService libraryService)
+        private readonly AppDbContext _dbContext;
+        private readonly IBookRepository _bookRepository;
+        private readonly ILogger<BooksController> _logger;
+        public BooksController(AppDbContext dbContext, IBookRepository bookRepository,
+       ILogger<BooksController> logger)
         {
-            _libraryService = libraryService;
+            _dbContext = dbContext;
+            _bookRepository = bookRepository;
+            _logger = logger;
         }
-
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Book>>> GetBooks()
+        //get all books
+        // GET: /api/Books/get-all-books?filterOn=Name&filterQuery=Track
+        [HttpGet("get-all-books")]
+        [Authorize(Roles = "Read")]
+        public IActionResult GetAll([FromQuery] string? filterOn, [FromQuery] string?
+       filterQuery,
+        [FromQuery] string? sortBy, [FromQuery] bool isAscending,
+        [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 100)
         {
-            var books = await _libraryService.GetBooksAsync();
-            return Ok(books);
+            _logger.LogInformation("GetAll Book Action method was invoked");
+            _logger.LogWarning("This is a warning log");
+            _logger.LogError("This is a error log");
+            // su dung reposity pattern
+            var allBooks = _bookRepository.GetBooksAsync(filterOn, filterQuery, sortBy,
+           isAscending, pageNumber, pageSize);
+            //debug
+            _logger.LogInformation($"Finished GetAllBook request with data{ JsonSerializer.Serialize(allBooks)}");
+        return Ok(allBooks);
         }
-
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> GetBook(int id)
+        [HttpGet("get-book-by-id")]
+        [Authorize(Roles = "Write,Read")]
+        public async Task<IActionResult> GetBook(int id)
         {
-            var book = await _libraryService.GetBookAsync(id);
+            GetBookByIdDTO book = await _bookRepository.GetBookAsync(id);
+
             if (book == null)
             {
-                return NotFound();
+                return StatusCode(StatusCodes.Status204NoContent, $"No book found for id: {id}");
             }
-            return book;
-        }
 
-        // POST: api/books
-        [HttpPost]
-        public async Task<ActionResult<Book>> PostBook(Book book)
-        {
-            var newBook = await _libraryService.AddBookAsync(book);
-            return CreatedAtAction(nameof(GetBook), new { id = newBook.BookID }, newBook);
+            return StatusCode(StatusCodes.Status200OK, book);
         }
-
-        // PUT: api/books/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutBook(int id, Book book)
+        [HttpPost("add-book")]
+      //  [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Book>> AddBook([FromBody] AddBookAuthorDTO book)
         {
-            if (id != book.BookID)
+            if (ModelState.IsValid)
+            {
+                var dbBook = await _bookRepository.AddBookAsync(book);
+
+                if (dbBook == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, $"{book.Title} could not be added.");
+                }
+                return Ok(dbBook);
+            }
+            else
+            {
+                return BadRequest(ModelState);
+            }
+        }
+        [HttpPut("update-book-by-id")]
+        [Authorize(Roles = "Write")]
+        public async Task<IActionResult> UpdateBook(int id, [FromBody] UpdateBookAuthorDTO book)
+        {
+            if (id != book.BookId)
             {
                 return BadRequest();
             }
-            await _libraryService.UpdateBookAsync(book);
-            return NoContent();
-        }
+            var dbBook = await _bookRepository.UpdateBookAsync(book);
 
-        // DELETE: api/books/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(int id)
-        {
-            var result = await _libraryService.DeleteBookAsync(id);
-            if (!result)
+            if (dbBook == null)
             {
-                return NotFound();
+                return StatusCode(StatusCodes.Status500InternalServerError, $"{book.Title} could not be updated");
             }
             return NoContent();
         }
-    }
+        [HttpDelete("delete-book-by-id")]
+        [Authorize(Roles = "Write")]
+        public async Task<IActionResult> DeleteBook(int id)
+        {
+            var book = await _bookRepository.GetBookAsync(id);
+            (bool status, string message) = await _bookRepository.DeleteBookAsync(book);
 
+            if (status == false)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+            return StatusCode(StatusCodes.Status200OK, book);
+        }
+        [HttpGet("search-book-by-name")]
+        public async Task<IActionResult> SearchBook(string? query)
+        {
+            try
+            {
+                var result = await _bookRepository.SearchBookAsync(query);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+        [HttpGet("filter-sortby-paging-book")]
+        public async Task<IActionResult> TestBook(string? query, double? from, double? to, string? sortBy, int page = 1)
+        {
+            try
+            {
+                var result = await _bookRepository.TestBookAsync(query, from, to, sortBy, page);
+
+                if (result == null || result.Count == 0)
+                    return NotFound();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred while processing the request.");
+            }
+        }
+
+    }
 }
