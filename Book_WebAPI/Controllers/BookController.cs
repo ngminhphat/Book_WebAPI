@@ -11,7 +11,7 @@ namespace Book_WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class BooksController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
@@ -27,7 +27,7 @@ namespace Book_WebAPI.Controllers
         //get all books
         // GET: /api/Books/get-all-books?filterOn=Name&filterQuery=Track
         [HttpGet("get-all-books")]
-        [Authorize(Roles = "Read")]
+       // [Authorize(Roles = "Read")]
         public IActionResult GetAll([FromQuery] string? filterOn, [FromQuery] string?
        filterQuery,
         [FromQuery] string? sortBy, [FromQuery] bool isAscending,
