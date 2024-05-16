@@ -1,0 +1,74 @@
+﻿@model IEnumerable<Library1.Models.DTO.BookDTO>
+
+<h2>List all books</h2>
+
+<form asp-controller="Books" asp-action="Index" method="GET">
+    <label>Tìm kiếm sách: </label>
+
+    <select name="filterOn" id="filteron">
+        <option value="title">Tiêu đề</option>
+
+        <option value="author">Tác giả</option>
+        <option value="publisher">Nhà xuất bản</option>
+
+    </select>
+    <input type="text" name="filterQuery" />
+
+    <label>Sắp xếp: </label>
+
+    <select name="sortBy" id="sortBy">
+        <option value="title"> Tiêu đề</option>
+        <option value="rate"> Đánh giá</option>
+
+    </select>
+    <label>Tăng dần: </label><input type="radio" name="isAscending" value="True" />
+
+    <label>Giảm dần: </label><input type="radio" name="isAscending" value="False" />
+    <input type="submit" value="Tìm kiếm" />
+
+</form>
+
+<a  class="btn btn-primary"  asp-controller="Books" asp-action="addBook">Add new book</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Id code</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Publisher</th>
+            <th>Rating</th>
+            <th>Detail</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.BookId</td>
+                <td>@item.Title</td>
+                <td>
+                    @if (item.AuthorName != null)
+                    {
+                        @foreach (var i in item.AuthorName)
+                        {
+                            @i
+                            <br />
+                        }
+                    }
+                </td>
+                <td>@item.PublisherName</td>
+
+                <td>@item.Rate </td>
+
+
+
+                <td> <a asp-area="" asp-controller="Books" asp-action="listBook" asp-route-id="@item.BookId">Detail</a></td>
+                <td> <a asp-area="" asp-controller="Books" asp-action="editBook" asp-route-id="@item.BookId">Edit</a></td>
+                <td> <a asp-area="" asp-controller="Books" asp-action="delBook" asp-route-id="@item.BookId">Delete</a></td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -11,7 +11,7 @@ namespace Book_WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
+    //[Authorize]jwt
     public class BooksController : ControllerBase
     {
         private readonly AppDbContext _dbContext;
@@ -27,8 +27,9 @@ namespace Book_WebAPI.Controllers
         //get all books
         // GET: /api/Books/get-all-books?filterOn=Name&filterQuery=Track
         [HttpGet("get-all-books")]
-       // [Authorize(Roles = "Read")]
-        public IActionResult GetAll([FromQuery] string? filterOn, [FromQuery] string?
+   //   [Authorize(Roles = "Read")]
+
+        public async Task<IActionResult> GetAll([FromQuery] string? filterOn, [FromQuery] string?
        filterQuery,
         [FromQuery] string? sortBy, [FromQuery] bool isAscending,
         [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 100)
@@ -37,14 +38,14 @@ namespace Book_WebAPI.Controllers
             _logger.LogWarning("This is a warning log");
             _logger.LogError("This is a error log");
             // su dung reposity pattern
-            var allBooks = _bookRepository.GetBooksAsync(filterOn, filterQuery, sortBy,
+            var allBooks = await _bookRepository.GetBooksAsync(filterOn, filterQuery, sortBy,
            isAscending, pageNumber, pageSize);
             //debug
             _logger.LogInformation($"Finished GetAllBook request with data{ JsonSerializer.Serialize(allBooks)}");
         return Ok(allBooks);
         }
         [HttpGet("get-book-by-id")]
-        [Authorize(Roles = "Write,Read")]
+      //  [Authorize(Roles = "Write,Read")]
         public async Task<IActionResult> GetBook(int id)
         {
             GetBookByIdDTO book = await _bookRepository.GetBookAsync(id);
@@ -92,7 +93,7 @@ namespace Book_WebAPI.Controllers
             return NoContent();
         }
         [HttpDelete("delete-book-by-id")]
-        [Authorize(Roles = "Write")]
+       // [Authorize(Roles = "Write")]
         public async Task<IActionResult> DeleteBook(int id)
         {
             var book = await _bookRepository.GetBookAsync(id);

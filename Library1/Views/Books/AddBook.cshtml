@@ -1,0 +1,72 @@
+﻿@model Library1.Models.DTO.AddBookDTO
+@{
+    var listAuthor = ViewBag.listAuthor;
+    var listPublisher = ViewBag.listPublisher;
+}
+
+<form asp-controller="Books" asp-action="AddBook" method="POST">
+    <div class="form-group">
+        <label>Title</label>
+        <input type="text" class="form-control" asp-for="Title" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Description</label>
+        <input type="text" class="form-control" asp-for="Description" />
+    </div>
+
+    <div class="form-group">
+        <label>IsRead</label><br />
+        <input type="radio" asp-for="IsRead" value="True" /> Yes
+        <input type="radio" asp-for="IsRead" value="False" /> No
+    </div>
+
+    <div class="form-group">
+        <label>DateRead</label>
+        <input type="date" class="form-control" asp-for="DateRead" />
+    </div>
+
+    <div class="form-group">
+        <label>Rate</label>
+        <input type="number" class="form-control" asp-for="Rate" />
+        <span asp-validation-for="Rate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label>Genre</label>
+        <input type="text" class="form-control" asp-for="Genre" />
+    </div>
+
+    <div class="form-group">
+        <label>Cover Url</label>
+        <input type="text" class="form-control" asp-for="CoverUrl" />
+    </div>
+
+    <div class="form-group">
+        <label>DateAdded</label>
+        <input type="date" class="form-control" asp-for="DateAdded" />
+    </div>
+
+    <div class="form-group">
+        <label>Publisher:</label>
+        <select class="form-control" asp-for="PublisherID">
+            @foreach (var item in listPublisher)
+            {
+                <option value="@item.Id">@item.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Author:</label>
+        <select class="form-control" asp-for="AuthorIds" multiple>
+            @foreach (var item in listAuthor)
+            {
+                <option value="@item.Id">@item.FullName</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>

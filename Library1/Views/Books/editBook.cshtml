@@ -1,0 +1,62 @@
+﻿@model Library1.Models.DTO.editBookDTO
+@{
+    var book = ViewBag.Book;
+    var listAuthor = ViewBag.ListAuthor;
+    var listPublisher = ViewBag.ListPublisher;
+}
+<h2>Edit book:</h2>
+@if (book != null)
+{
+    <form asp-controller="Books" asp-action="editBook" asp-route-id="@book.BookId" method="POST">
+        <label>Title</label>
+        <input type="text" name="title" asp-for="Title" value="@book.Title" /><br />
+
+        <label>Description</label>
+        <input type="text" name="description" asp-for="Description" value="@book.Description" /><br />
+
+        <label>IsRead</label>
+        @if (book.IsRead)
+        {
+            <input type="radio" name="isRead" asp-for="IsRead" value="True" checked /> <label>Yes</label>
+            <input type="radio" name="isRead" asp-for="IsRead" value="False" /> <label>No</label>
+            <br />
+        }
+        else
+        {
+            <input type="radio" name="isRead" asp-for="IsRead" value="True" /> <label>Yes</label>
+            <input type="radio" name="isRead" asp-for="IsRead" value="False" checked /> <label>No</label>
+            <br />
+        }
+
+        <label>DateRead</label>
+        <input type="datetime" name="dateRead" asp-for="DateRead" value="@book.DateRead" /><br />
+
+        <label>Rate</label>
+        <input type="number" name="rate" asp-for="Rate" value="@book.Rate" /><br />
+
+        <label>Genre</label>
+        <input type="text" name="genre" asp-for="Genre" value="@book.Genre" /><br />
+
+        <label>Cover Url</label>
+        <input type="text" name="coverUrl" asp-for="CoverUrl" value="@book.CoverUrl" /><br />
+
+        <label>DateAdded: </label>
+        <input type="datetime" name="dateAdded" asp-for="DateAdded" value="@book.DateAdded" /><br />
+
+        <label>Publisher: </label>
+        <input type="text" name="publisherName" value="@book.PublisherName" /><br />
+
+        <label>Authors: </label>
+        @for (int i = 0; i < book.AuthorName.Count; i++)
+        {
+            <input type="text" name="authorNames" value="@book.AuthorName[i]" />
+
+            <br />
+        }
+        <input type="submit" value="Save" />
+    </form>
+}
+else
+{
+    <p>Chức năng này hiện đang bảo trì,vui lòng thử lại sau =)))).</p>
+}
